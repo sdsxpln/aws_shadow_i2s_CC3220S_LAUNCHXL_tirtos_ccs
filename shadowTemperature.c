@@ -1,20 +1,11 @@
-/*
- * Copyright 2010-2015 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * A copy of the License is located at
- *
- *  http://aws.amazon.com/apache2.0
- *
- * or in the "license" file accompanying this file. This file is distributed
- * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied. See the License for the specific language governing
- * permissions and limitations under the License.
- */
 #include <string.h>
 
 #include <unistd.h>
+
+#include <ti/drivers/I2C.h>
+
+/* Example/Board Header files */
+#include "Board.h"
 
 #include "aws_iot_log.h"
 #include "aws_iot_version.h"
@@ -60,19 +51,16 @@ char HostAddress[255] = AWS_IOT_MQTT_HOST;
 uint32_t port = AWS_IOT_MQTT_PORT;
 uint8_t numPubs = 5;
 
-static void simulateRoomTemperature(float *pRoomTemperature)
-{
-    static float deltaChange;
+#define TMP006_DIE_TEMP     0x0001  /* Die Temp Result Register */
 
-    if (*pRoomTemperature >= ROOMTEMPERATURE_UPPERLIMIT) {
-        deltaChange = -0.5f;
-    } else if(*pRoomTemperature <= ROOMTEMPERATURE_LOWERLIMIT) {
-        deltaChange = 0.5f;
-    }
+uint8_t         txBuffer[1];
+uint8_t         rxBuffer[2];
+I2C_Handle      i2c;
+I2C_Params      i2cParams;
+I2C_Transaction i2cTransaction;
 
-    *pRoomTemperature+= deltaChange;
-}
-
+void initI2sTemperature();
+void readI2sTemperature(float*);
 
 void ShadowUpdateStatusCallback(const char *pThingName, ShadowActions_t action,
         Shadow_Ack_Status_t status, const char *pReceivedJsonDocument,
@@ -97,6 +85,8 @@ void windowActuate_Callback(const char *pJsonString, uint32_t JsonStringDataLen,
 
 void runAWSClient(void)
 {
+    // i2s
+    // end i2s
     IoT_Error_t rc = SUCCESS;
 
     AWS_IoT_Client mqttClient;
@@ -104,7 +94,8 @@ void runAWSClient(void)
     char JsonDocumentBuffer[MAX_LENGTH_OF_UPDATE_JSON_BUFFER];
     size_t sizeOfJsonDocumentBuffer = sizeof(JsonDocumentBuffer)
             / sizeof(JsonDocumentBuffer[0]);
-    float temperature = 0.0;
+
+    float fTemperature = 0.0;
 
     bool windowOpen = false;
     jsonStruct_t windowActuator;
@@ -116,7 +107,7 @@ void runAWSClient(void)
     jsonStruct_t temperatureHandler;
     temperatureHandler.cb = NULL;
     temperatureHandler.pKey = "temperature";
-    temperatureHandler.pData = &temperature;
+    temperatureHandler.pData = &fTemperature;
     temperatureHandler.type = SHADOW_JSON_FLOAT;
 
     IOT_INFO("\nAWS IoT SDK Version(dev) %d.%d.%d-%s\n", VERSION_MAJOR,
@@ -170,7 +161,8 @@ void runAWSClient(void)
     if (SUCCESS != rc) {
         IOT_ERROR("Shadow Register Delta Error (%d)", rc);
     }
-    temperature = STARTING_ROOMTEMPERATURE;
+
+    initI2sTemperature();
 
     /* loop and publish a change in temperature */
     while (NETWORK_ATTEMPTING_RECONNECT == rc || NETWORK_RECONNECTED == rc ||
@@ -183,7 +175,8 @@ void runAWSClient(void)
         }
         IOT_INFO("\n==========================================================\n");
         IOT_INFO("On Device: window state %s", windowOpen?"true":"false");
-        simulateRoomTemperature(&temperature);
+
+        readI2sTemperature(&fTemperature);
 
         rc = aws_iot_shadow_init_json_document(JsonDocumentBuffer,
                 sizeOfJsonDocumentBuffer);
@@ -203,6 +196,7 @@ void runAWSClient(void)
             }
         }
         IOT_INFO("\n==========================================================\n");
+        Display_doPrintf(AWSIOT_display, 0, 0, "." );
         sleep(1);
     }
 
@@ -210,10 +204,68 @@ void runAWSClient(void)
         IOT_ERROR("An error occurred in the loop %d", rc);
     }
 
+    /* Deinitialized I2C */
+    I2C_close(i2c);
+    IOT_INFO("I2C closed!\n");
+
     IOT_INFO("Disconnecting");
     rc = aws_iot_shadow_disconnect(&mqttClient);
 
     if (SUCCESS != rc) {
         IOT_ERROR("Disconnect error %d", rc);
     }
+
+}
+
+void initI2sTemperature() {
+    I2C_init();
+    IOT_INFO("Starting the i2ctmp006 example\n");
+
+    /* Create I2C for usage */
+    I2C_Params_init(&i2cParams);
+    i2cParams.bitRate = I2C_400kHz;
+    i2c = I2C_open(Board_I2C_TMP, &i2cParams);
+    if (i2c == NULL) {
+        IOT_ERROR("Error Initializing I2C\n");
+        while (1);
+    }
+    else {
+        IOT_INFO("I2C Initialized!\n");
+    }
+
+    /* Point to the T ambient register and read its 2 bytes */
+    txBuffer[0] = TMP006_DIE_TEMP;
+    i2cTransaction.slaveAddress = Board_TMP_ADDR;
+    i2cTransaction.writeBuf = txBuffer;
+    i2cTransaction.writeCount = 1;
+    i2cTransaction.readBuf = rxBuffer;
+    i2cTransaction.readCount = 2;
+
+}
+
+void readI2sTemperature(float* fTemperature ) {
+    uint16_t temperature = (uint16_t)*fTemperature;
+    if (I2C_transfer(i2c, &i2cTransaction)) {
+        /* Extract degrees C from the received data; see TMP102 datasheet */
+        temperature = (rxBuffer[0] << 6) | (rxBuffer[1] >> 2);
+
+        /*
+         * If the MSB is set '1', then we have a 2's complement
+         * negative value which needs to be sign extended
+         */
+        if (rxBuffer[0] & 0x80) {
+            temperature |= 0xF000;
+        }
+       /*
+        * For simplicity, divide the temperature value by 32 to get rid of
+        * the decimal precision; see TI's TMP006 datasheet
+        */
+        temperature /= 32;
+
+        IOT_INFO("Sample %u: (C)\n", temperature);
+    }
+    else {
+        IOT_ERROR("I2C Bus fault\n");
+    }
+    *fTemperature = (float)temperature;
 }
