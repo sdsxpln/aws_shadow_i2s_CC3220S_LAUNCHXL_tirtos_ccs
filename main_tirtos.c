@@ -138,10 +138,6 @@ int main(int argc, char *argv[])
     pthread_t awsThread;
     int status;
 
-    pthread_t           i2Sthread;
-    struct sched_param  i2SpriParam;
-    int                 i2SdetachState;
-
     Board_initGeneral();
     GPIO_init();
     SPI_init();
@@ -193,41 +189,6 @@ int main(int argc, char *argv[])
      *  board in order to re-establish your JTAG connection.
      */
     /* Power_enablePolicy(); */
-
-/*
-    // i2s
-    // Set priority and stack size attributes
-    pthread_attr_init(&pthreadAttrs);
-    //
-    // this is default settings
-    // i2SpriParam.sched_priority = 1;
-    //
-    i2SdetachState = PTHREAD_CREATE_DETACHED;
-    status = pthread_attr_setdetachstate(&pthreadAttrs, i2SdetachState);
-    if (status != 0) {
-        // pthread_attr_setdetachstate() failed
-        while (1);
-    }
-
-    // this is default settings
-    i2SpriParam.sched_priority = 1;
-    pthread_attr_setschedparam(&pthreadAttrs, &i2SpriParam);
-
-    status |= pthread_attr_setstacksize(&pthreadAttrs, I2STHREADSTACKSIZE);
-    if (status != 0) {
-        // pthread_attr_setstacksize() failed
-        while (1);
-    }
-
-    status = pthread_create(&i2Sthread, &pthreadAttrs, i2SmainThread, NULL);
-    if (status != 0) {
-        // pthread_create() failed
-        while (1);
-    }
-
-    pthread_attr_destroy(&pthreadAttrs);
-    // i2s end
-*/
 
     BIOS_start();
 // end original

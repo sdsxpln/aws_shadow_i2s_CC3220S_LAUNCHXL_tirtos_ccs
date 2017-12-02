@@ -260,12 +260,11 @@ void readI2sTemperature(float* fTemperature ) {
         * For simplicity, divide the temperature value by 32 to get rid of
         * the decimal precision; see TI's TMP006 datasheet
         */
-        temperature /= 32;
+        *fTemperature = ((float)temperature)/32.0f;
 
-        IOT_INFO("Sample %u: (C)\n", temperature);
+        IOT_INFO("Sample %f: (C)\n", fTemperature);
     }
     else {
         IOT_ERROR("I2C Bus fault\n");
     }
-    *fTemperature = (float)temperature;
 }
