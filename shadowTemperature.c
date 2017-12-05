@@ -46,23 +46,26 @@
  * }
  */
 
-#define ROOMTEMPERATURE_UPPERLIMIT 32.0f
-#define ROOMTEMPERATURE_LOWERLIMIT 25.0f
-#define STARTING_ROOMTEMPERATURE ROOMTEMPERATURE_LOWERLIMIT
+//#define ROOMTEMPERATURE_UPPERLIMIT 32.0f
+//#define ROOMTEMPERATURE_LOWERLIMIT 25.0f
+//#define STARTING_ROOMTEMPERATURE ROOMTEMPERATURE_LOWERLIMIT
 #define MAX_LENGTH_OF_UPDATE_JSON_BUFFER 200
+//#define MAX_LENGTH_OF_UPDATE_JSON_BUFFER 1000
 
 char HostAddress[255] = AWS_IOT_MQTT_HOST;
 uint32_t port = AWS_IOT_MQTT_PORT;
-uint8_t numPubs = 5;
+// uint8_t numPubs = 5;
 
 void initI2s(void);
 uint8_t temperatureReading(void);
+uint8_t accelerometerReading(void);
 
 // new i2C stuff
 int8_t      xVal, yVal, zVal;
 float       temperatureVal;
 I2C_Handle  i2cHandle;
-pthread_mutex_t sensorLockObj;    /* Lock Object for sensor readings */
+/* Lock Object for sensor readings */
+//pthread_mutex_t sensorLockObj;
 
 
 void ShadowUpdateStatusCallback(const char *pThingName, ShadowActions_t action,
@@ -101,6 +104,7 @@ void runAWSClient(void)
     temperatureVal = 0.0;
 
     bool windowOpen = false;
+
     jsonStruct_t windowActuator;
     windowActuator.cb = windowActuate_Callback;
     windowActuator.pData = &windowOpen;
@@ -112,6 +116,24 @@ void runAWSClient(void)
     temperatureHandler.pKey = "temperature";
     temperatureHandler.pData = &temperatureVal;
     temperatureHandler.type = SHADOW_JSON_FLOAT;
+
+    jsonStruct_t xValHandler;
+    xValHandler.cb = NULL;
+    xValHandler.pKey = "xval";
+    xValHandler.pData = &xVal;
+    xValHandler.type = SHADOW_JSON_INT8;
+
+    jsonStruct_t yValHandler;
+    yValHandler.cb = NULL;
+    yValHandler.pKey = "yval";
+    yValHandler.pData = &yVal;
+    yValHandler.type = SHADOW_JSON_INT8;
+
+    jsonStruct_t zValHandler;
+    zValHandler.cb = NULL;
+    zValHandler.pKey = "zval";
+    zValHandler.pData = &zVal;
+    zValHandler.type = SHADOW_JSON_INT8;
 
     IOT_INFO("\nAWS IoT SDK Version(dev) %d.%d.%d-%s\n", VERSION_MAJOR,
             VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
@@ -179,16 +201,19 @@ void runAWSClient(void)
         IOT_INFO("\n==========================================================\n");
         IOT_INFO("On Device: window state %s", windowOpen?"true":"false");
 
-//        readI2sTemperature(&fTemperature);
         temperatureReading();
-        Display_doPrintf(AWSIOT_display, 0, 0, " %f ", temperatureVal );
+        accelerometerReading();
 
         rc = aws_iot_shadow_init_json_document(JsonDocumentBuffer,
                 sizeOfJsonDocumentBuffer);
         if (rc == SUCCESS) {
             rc = aws_iot_shadow_add_reported(JsonDocumentBuffer,
-                    sizeOfJsonDocumentBuffer, 2, &temperatureHandler,
-                    &windowActuator);
+                    sizeOfJsonDocumentBuffer, 5,
+                    &temperatureHandler,
+                    &windowActuator,
+                    &xValHandler,
+                    &yValHandler,
+                    &zValHandler);
             if (rc == SUCCESS) {
                 rc = aws_iot_finalize_json_document(JsonDocumentBuffer,
                         sizeOfJsonDocumentBuffer);
@@ -242,13 +267,16 @@ void initI2s() {
     }
 
     /* Setup mutex operations for sensors reading */
-    pthread_mutex_init(&sensorLockObj , (pthread_mutexattr_t*)NULL);
+//    pthread_mutex_init(&sensorLockObj , (pthread_mutexattr_t*)NULL);
 
 }
 
 //*****************************************************************************
 //
-//! Function to read temperature
+//! Function to read temperature. This reads the IR Temperature sensor
+//! as opposed to only the ambient die temp, so it's vastly more "unstable"
+//! as just a sensor on the CC3220S-LAUNCHXL Launchpad, but it's also
+//! a lot more fun that way.
 //!
 //! \param  none
 //!
@@ -262,16 +290,18 @@ uint8_t temperatureReading(void)
 
     /* Read temperature axis values */
     status = TMP006DrvGetTemp(i2cHandle, &fTempRead);
+/*
     if (status != 0)
     {
-        /* try to read again */
+        // try to read again
         status = TMP006DrvGetTemp(i2cHandle, &fTempRead);
-        if (status != 0)    /* leave previous values */
+        // leave previous values
+        if (status != 0)
         {
             IOT_ERROR("[Link local task] Failed to read data from temperature sensor\n\r");
         }
     }
-
+*/
     if (status == 0)
     {
 //        fTempRead = (fTempRead > 100) ? 100 : fTempRead;
@@ -290,39 +320,42 @@ uint8_t temperatureReading(void)
 //! \return SUCCESS or FAILURE
 //!
 //*****************************************************************************
-uint8_t accelarometerReading(void)
+uint8_t accelerometerReading(void)
 {
     int8_t     xValRead, yValRead, zValRead;
     int32_t status;
 
+/*
     if (sensorLockObj != NULL)
     {
         pthread_mutex_lock(&sensorLockObj);
     }
-
+*/
     /* Read accelarometer axis values */
     status = BMA222ReadNew(i2cHandle, &xValRead, &yValRead, &zValRead);
+/*
     if (status != 0)
     {
-        /* try to read again */
+        // try to read again
         status = BMA222ReadNew(i2cHandle, &xValRead, &yValRead, &zValRead);
-        if (status != 0)    /* leave previous values */
+        // leave previous values
+        if (status != 0)
         {
             IOT_ERROR("[Link local task] Failed to read data from accelarometer\n\r");
         }
     }
-
+*/
     if (status == 0)
     {
         xVal = xValRead;
         yVal = yValRead;
         zVal = zValRead;
     }
-
+/*
     if (sensorLockObj != NULL)
     {
         pthread_mutex_unlock(&sensorLockObj);
     }
-
+*/
     return status;
 }

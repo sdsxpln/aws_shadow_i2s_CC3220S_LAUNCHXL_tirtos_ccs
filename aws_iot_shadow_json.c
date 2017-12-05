@@ -164,7 +164,6 @@ IoT_Error_t aws_iot_shadow_add_reported(char *pJsonDocument, size_t maxSizeOfJso
 		return NULL_VALUE_ERROR;
 	}
 
-
 	tempSize = maxSizeOfJsonDocument - strlen(pJsonDocument);
 	if(tempSize <= 1) {
 		return SHADOW_JSON_ERROR;
