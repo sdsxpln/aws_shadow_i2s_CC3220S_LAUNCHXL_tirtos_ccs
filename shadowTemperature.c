@@ -181,6 +181,7 @@ void runAWSClient(void)
 
 //        readI2sTemperature(&fTemperature);
         temperatureReading();
+        Display_doPrintf(AWSIOT_display, 0, 0, " %f ", temperatureVal );
 
         rc = aws_iot_shadow_init_json_document(JsonDocumentBuffer,
                 sizeOfJsonDocumentBuffer);
@@ -200,7 +201,7 @@ void runAWSClient(void)
             }
         }
         IOT_INFO("\n==========================================================\n");
-        Display_doPrintf(AWSIOT_display, 0, 0, "." );
+//        Display_doPrintf(AWSIOT_display, 0, 0, "." );
         sleep(1);
     }
 
@@ -273,7 +274,7 @@ uint8_t temperatureReading(void)
 
     if (status == 0)
     {
-        fTempRead = (fTempRead > 100) ? 100 : fTempRead;
+//        fTempRead = (fTempRead > 100) ? 100 : fTempRead;
         temperatureVal = fTempRead;
     }
 

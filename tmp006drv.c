@@ -99,15 +99,16 @@ GetRegisterValue(I2C_Handle i2cHandle, unsigned char ucRegAddr, unsigned short *
 //! \return temperature value
 //
 //****************************************************************************
+/*
+* This algo is obtained from
+* http://processors.wiki.ti.com/index.php/SensorTag_User_Guide
+* #IR_Temperature_Sensor
+*/
+
 double ComputeTemperature(double dVobject, double dTAmbient)
 {
-    /*
-    * This algo is obtained from 
-    * http://processors.wiki.ti.com/index.php/SensorTag_User_Guide
-    * #IR_Temperature_Sensor
-    */
     double Tdie2 = dTAmbient + 273.15;
-    const double S0 = 6.4E-14;            /* Calibration factor */
+    const double S0 = 6.4E-14;            // Calibration factor
     const double a1 = 1.75E-3;
     const double a2 = -1.678E-5;
     const double b0 = -2.94E-5;
@@ -226,7 +227,7 @@ TMP006DrvGetTemp(I2C_Handle i2cHandle, float *pfCurrTemp)
     *pfCurrTemp = ComputeTemperature(dVObject, dTAmbient);
     
     /* Convert to Farenheit */
-    *pfCurrTemp = ((*pfCurrTemp * 9) / 5) + 32;
+//    *pfCurrTemp = ((*pfCurrTemp * 9) / 5) + 32;
 
     return SUCCESS;
 }
