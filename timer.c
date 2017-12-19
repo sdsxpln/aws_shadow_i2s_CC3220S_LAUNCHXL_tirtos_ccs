@@ -16,6 +16,8 @@
 #include <assert.h>
 #include <time.h>
 #include <timer_interface.h>
+#include "aws_iot_log.h"
+
 
 uint32_t left_ms(Timer *timer)
 {
@@ -54,6 +56,9 @@ void countdown_ms(Timer *timer, uint32_t tms)
     uint32_t timeMs;
     uint32_t fractionMs;
 
+    if ( tms >= TIMER_MAX_TIMEOUT_MS ) {
+        IOT_ERROR("Ooops ... ");
+    }
     assert(tms < TIMER_MAX_TIMEOUT_MS);
     timer->length = tms;
 

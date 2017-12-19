@@ -11,50 +11,35 @@
 #include "bma222drv.h"
 #include "tmp006drv.h"
 
+#include "aws_iot_config.h"
 #include "aws_iot_log.h"
 #include "aws_iot_version.h"
-#include "aws_iot_shadow_interface.h"
-#include "aws_iot_shadow_json_data.h"
-#include "aws_iot_config.h"
 #include "aws_iot_mqtt_client_interface.h"
+#include "aws_iot_shadow_interface.h"
 
-/*
- * The goal of this sample application is to demonstrate the capabilities of
- * shadow.
- * This device(say Connected Window) will open the window of a room based on
- * temperature.
+/*!
+ * The goal of this sample application is to demonstrate the capabilities of shadow.
+ * This device(say Connected Window) will open the window of a room based on temperature
  * It can report to the Shadow the following parameters:
  *  1. temperature of the room (double)
  *  2. status of the window (open or close)
- * It can act on commands from the cloud. In this case it will open or close
- * the window based on the json object "windowOpen" data[open/close]
+ * It can act on commands from the cloud. In this case it will open or close the window based on the json object "windowOpen" data[open/close]
  *
- * The two variables from a device's perspective are double temperature and
- * bool windowOpen
- * The device needs to act on only on windowOpen variable, so we will create
- * a primitiveJson_t object with callback
- *
- * The Json Document in the cloud will be
- * {
- *   "reported": {
- *     "temperature": 0,
- *     "windowOpen": false
- *   },
- *   "desired": {
- *     "windowOpen": false
- *   }
- * }
+ * The two variables from a device's perspective are double temperature and bool windowOpen
+ * The device needs to act on only on windowOpen variable, so we will create a primitiveJson_t object with callback
+ The Json Document in the cloud will be
+ {
+ "reported": {
+ "temperature": 0,
+ "windowOpen": false
+ },
+ "desired": {
+ "windowOpen": false
+ }
+ }
  */
 
-//#define ROOMTEMPERATURE_UPPERLIMIT 32.0f
-//#define ROOMTEMPERATURE_LOWERLIMIT 25.0f
-//#define STARTING_ROOMTEMPERATURE ROOMTEMPERATURE_LOWERLIMIT
 #define MAX_LENGTH_OF_UPDATE_JSON_BUFFER 200
-//#define MAX_LENGTH_OF_UPDATE_JSON_BUFFER 1000
-
-char HostAddress[255] = AWS_IOT_MQTT_HOST;
-uint32_t port = AWS_IOT_MQTT_PORT;
-// uint8_t numPubs = 5;
 
 void initI2s(void);
 uint8_t temperatureReading(void);
@@ -64,8 +49,6 @@ uint8_t accelerometerReading(void);
 int8_t      xVal, yVal, zVal;
 float       temperatureVal;
 I2C_Handle  i2cHandle;
-/* Lock Object for sensor readings */
-//pthread_mutex_t sensorLockObj;
 
 
 void ShadowUpdateStatusCallback(const char *pThingName, ShadowActions_t action,
@@ -91,17 +74,14 @@ void windowActuate_Callback(const char *pJsonString, uint32_t JsonStringDataLen,
 
 void runAWSClient(void)
 {
-    // i2s
-    // end i2s
-    IoT_Error_t rc = SUCCESS;
+    IoT_Error_t rc = FAILURE;
 
     AWS_IoT_Client mqttClient;
 
     char JsonDocumentBuffer[MAX_LENGTH_OF_UPDATE_JSON_BUFFER];
-    size_t sizeOfJsonDocumentBuffer = sizeof(JsonDocumentBuffer)
-            / sizeof(JsonDocumentBuffer[0]);
+    size_t sizeOfJsonDocumentBuffer = sizeof(JsonDocumentBuffer) / sizeof(JsonDocumentBuffer[0]);
 
-    temperatureVal = 0.0;
+	temperatureVal = 0.0;
 
     bool windowOpen = false;
 
@@ -143,8 +123,8 @@ void runAWSClient(void)
     IOT_DEBUG("Using clientKey %s", AWS_IOT_PRIVATE_KEY_FILENAME);
 
     ShadowInitParameters_t sp = ShadowInitParametersDefault;
-    sp.pHost = HostAddress;
-    sp.port = port;
+    sp.pHost = AWS_IOT_MQTT_HOST;
+    sp.port = AWS_IOT_MQTT_PORT;
     sp.pClientCRT = AWS_IOT_CERTIFICATE_FILENAME;
     sp.pClientKey = AWS_IOT_PRIVATE_KEY_FILENAME;
     sp.pRootCA = AWS_IOT_ROOT_CA_FILENAME;
@@ -153,60 +133,57 @@ void runAWSClient(void)
 
     IOT_INFO("Shadow Init");
     rc = aws_iot_shadow_init(&mqttClient, &sp);
-    if (SUCCESS != rc) {
-        IOT_ERROR("Shadow Initialization Error (%d)", rc);
-        return;
+    if(SUCCESS != rc) {
+        IOT_ERROR("Shadow Connection Error");
+        return rc;
     }
 
     ShadowConnectParameters_t scp = ShadowConnectParametersDefault;
     scp.pMyThingName = AWS_IOT_MY_THING_NAME;
     scp.pMqttClientId = AWS_IOT_MQTT_CLIENT_ID;
-	scp.mqttClientIdLen = (uint16_t) strlen(AWS_IOT_MQTT_CLIENT_ID);
+    scp.mqttClientIdLen = (uint16_t) strlen(AWS_IOT_MQTT_CLIENT_ID);
 
     IOT_INFO("Shadow Connect");
     rc = aws_iot_shadow_connect(&mqttClient, &scp);
-    if (SUCCESS != rc) {
-        IOT_ERROR("Shadow Connection Error (%d)", rc);
+    if(SUCCESS != rc) {
+        IOT_ERROR("Shadow Connection Error");
         return;
     }
 
     /*
-     *  Enable Auto Reconnect functionality. Minimum and Maximum time of
-     *  exponential backoff are set in aws_iot_config.h:
+     * Enable Auto Reconnect functionality. Minimum and Maximum time of Exponential backoff are set in aws_iot_config.h
      *  #AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL
      *  #AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL
      */
     rc = aws_iot_shadow_set_autoreconnect_status(&mqttClient, true);
-    if (SUCCESS != rc) {
+    if(SUCCESS != rc) {
         IOT_ERROR("Unable to set Auto Reconnect to true - %d", rc);
     }
 
     rc = aws_iot_shadow_register_delta(&mqttClient, &windowActuator);
 
-    if (SUCCESS != rc) {
-        IOT_ERROR("Shadow Register Delta Error (%d)", rc);
+    if(SUCCESS != rc) {
+        IOT_ERROR("Shadow Register Delta Error");
     }
 
     initI2s();
 
-    /* loop and publish a change in temperature */
-    while (NETWORK_ATTEMPTING_RECONNECT == rc || NETWORK_RECONNECTED == rc ||
-            SUCCESS == rc) {
-        rc = aws_iot_shadow_yield(&mqttClient, 1000);
-        if (NETWORK_ATTEMPTING_RECONNECT == rc) {
+    // loop and publish a change in temperature
+    while(NETWORK_ATTEMPTING_RECONNECT == rc || NETWORK_RECONNECTED == rc || SUCCESS == rc) {
+        rc = aws_iot_shadow_yield(&mqttClient, 200);
+        if(NETWORK_ATTEMPTING_RECONNECT == rc) {
             usleep(1000);
-            /* If the client is attempting to reconnect, skip rest of loop */
+            // If the client is attempting to reconnect we will skip the rest of the loop.
             continue;
         }
-        IOT_INFO("\n==========================================================\n");
-        IOT_INFO("On Device: window state %s", windowOpen?"true":"false");
+        IOT_INFO("\n=======================================================================================\n");
+        IOT_INFO("On Device: window state %s", windowOpen ? "true" : "false");
 
         temperatureReading();
         accelerometerReading();
 
-        rc = aws_iot_shadow_init_json_document(JsonDocumentBuffer,
-                sizeOfJsonDocumentBuffer);
-        if (rc == SUCCESS) {
+        rc = aws_iot_shadow_init_json_document(JsonDocumentBuffer, sizeOfJsonDocumentBuffer);
+        if(SUCCESS == rc) {
             rc = aws_iot_shadow_add_reported(JsonDocumentBuffer,
                     sizeOfJsonDocumentBuffer, 5,
                     &temperatureHandler,
@@ -214,23 +191,21 @@ void runAWSClient(void)
                     &xValHandler,
                     &yValHandler,
                     &zValHandler);
-            if (rc == SUCCESS) {
-                rc = aws_iot_finalize_json_document(JsonDocumentBuffer,
-                        sizeOfJsonDocumentBuffer);
-                if (rc == SUCCESS) {
+
+            if(SUCCESS == rc) {
+                rc = aws_iot_finalize_json_document(JsonDocumentBuffer, sizeOfJsonDocumentBuffer);
+                if(SUCCESS == rc) {
                     IOT_INFO("Update Shadow: %s", JsonDocumentBuffer);
-                    rc = aws_iot_shadow_update(&mqttClient,
-                            AWS_IOT_MY_THING_NAME, JsonDocumentBuffer,
-                            ShadowUpdateStatusCallback, NULL, 4, true);
+                    rc = aws_iot_shadow_update(&mqttClient, AWS_IOT_MY_THING_NAME, JsonDocumentBuffer,
+                                               ShadowUpdateStatusCallback, NULL, 4, true);
                 }
             }
         }
-        IOT_INFO("\n==========================================================\n");
-//        Display_doPrintf(AWSIOT_display, 0, 0, "." );
+        IOT_INFO("*****************************************************************************************\n");
         sleep(1);
     }
 
-    if (SUCCESS != rc) {
+    if(SUCCESS != rc) {
         IOT_ERROR("An error occurred in the loop %d", rc);
     }
 
@@ -241,7 +216,7 @@ void runAWSClient(void)
     IOT_INFO("Disconnecting");
     rc = aws_iot_shadow_disconnect(&mqttClient);
 
-    if (SUCCESS != rc) {
+    if(SUCCESS != rc) {
         IOT_ERROR("Disconnect error %d", rc);
     }
 

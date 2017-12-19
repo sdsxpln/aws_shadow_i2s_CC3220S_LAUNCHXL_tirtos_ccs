@@ -34,9 +34,6 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <ti/display/Display.h>
-
-extern Display_Handle AWSIOT_display;
 
 /**
  * @brief Debug level logging macro.
@@ -46,9 +43,9 @@ extern Display_Handle AWSIOT_display;
 #ifdef ENABLE_IOT_DEBUG
 #define IOT_DEBUG(...)    \
 	{\
-	Display_printf(AWSIOT_display, 0, 0, "DEBUG:   %s L#%d ", __func__, __LINE__);  \
-	Display_printf(AWSIOT_display, 0, 0, __VA_ARGS__); \
-	Display_printf(AWSIOT_display, 0, 0, "\n"); \
+	printf("DEBUG:   %s L#%d ", __func__, __LINE__);  \
+	printf(__VA_ARGS__); \
+	printf("\n"); \
 	}
 #else
 #define IOT_DEBUG(...)
@@ -62,15 +59,15 @@ extern Display_Handle AWSIOT_display;
 #ifdef ENABLE_IOT_TRACE
 #define FUNC_ENTRY    \
 	{\
-	Display_printf(AWSIOT_display, 0, 0, "FUNC_ENTRY:   %s L#%d \n", __func__, __LINE__);  \
+	printf("FUNC_ENTRY:   %s L#%d \n", __func__, __LINE__);  \
 	}
 #define FUNC_EXIT    \
 	{\
-	Display_printf(AWSIOT_display, 0, 0, "FUNC_EXIT:   %s L#%d \n", __func__, __LINE__);  \
+	printf("FUNC_EXIT:   %s L#%d \n", __func__, __LINE__);  \
 	}
 #define FUNC_EXIT_RC(x)    \
 	{\
-	Display_printf(AWSIOT_display, 0, 0, "FUNC_EXIT:   %s L#%d Return Code : %d \n", __func__, __LINE__, x);  \
+	printf("FUNC_EXIT:   %s L#%d Return Code : %d \n", __func__, __LINE__, x);  \
 	return x; \
 	}
 #else
@@ -88,8 +85,8 @@ extern Display_Handle AWSIOT_display;
 #ifdef ENABLE_IOT_INFO
 #define IOT_INFO(...)    \
 	{\
-	Display_printf(AWSIOT_display, 0, 0, __VA_ARGS__); \
-	Display_printf(AWSIOT_display, 0, 0, "\n"); \
+	printf(__VA_ARGS__); \
+	printf("\n"); \
 	}
 #else
 #define IOT_INFO(...)
@@ -103,9 +100,9 @@ extern Display_Handle AWSIOT_display;
 #ifdef ENABLE_IOT_WARN
 #define IOT_WARN(...)   \
 	{ \
-	Display_printf(AWSIOT_display, 0, 0, "WARN:  %s L#%d ", __func__, __LINE__);  \
-	Display_printf(AWSIOT_display, 0, 0, __VA_ARGS__); \
-	Display_printf(AWSIOT_display, 0, 0, "\n"); \
+	printf("WARN:  %s L#%d ", __func__, __LINE__);  \
+	printf(__VA_ARGS__); \
+	printf("\n"); \
 	}
 #else
 #define IOT_WARN(...)
@@ -119,9 +116,9 @@ extern Display_Handle AWSIOT_display;
 #ifdef ENABLE_IOT_ERROR
 #define IOT_ERROR(...)  \
 	{ \
-	Display_printf(AWSIOT_display, 0, 0, "ERROR: %s L#%d ", __func__, __LINE__); \
-	Display_printf(AWSIOT_display, 0, 0, __VA_ARGS__); \
-	Display_printf(AWSIOT_display, 0, 0, "\n"); \
+	printf("ERROR: %s L#%d ", __func__, __LINE__); \
+	printf(__VA_ARGS__); \
+	printf("\n"); \
 	}
 #else
 #define IOT_ERROR(...)
