@@ -33,9 +33,13 @@
 #define WIFICONFIG_H
 
 /* USER STEP: Update these macros */
-#define SSID ".Workshop Cafe"
-#define SECURITY_KEY ""
-#define SECURITY_TYPE SL_WLAN_SEC_TYPE_OPEN
+//#define SSID ".Workshop Cafe"
+//#define SECURITY_KEY ""
+//#define SECURITY_TYPE SL_WLAN_SEC_TYPE_OPEN
+
+#define SSID "WeWork 2.4ghz"
+#define SECURITY_KEY "P@ssw0rd"
+#define SECURITY_TYPE SL_WLAN_SEC_TYPE_WPA_WPA2
 
 //#define SSID "kbnwifi"
 //#define SECURITY_KEY "th8nkyou"

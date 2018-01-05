@@ -67,9 +67,15 @@ void ShadowUpdateStatusCallback(const char *pThingName, ShadowActions_t action,
 void windowActuate_Callback(const char *pJsonString, uint32_t JsonStringDataLen,
       jsonStruct_t *pContext)
 {
+    bool windowOpened = *(bool *)(pContext->pData);
     if (pContext != NULL) {
         IOT_INFO("Delta - Window state changed to %d", *(bool *)(pContext->pData));
     }
+    if ( windowOpened )
+        GPIO_write(Board_LED0, Board_LED_ON);
+    else
+        GPIO_write(Board_LED0, Board_LED_OFF);
+
 }
 
 void runAWSClient(void)
@@ -84,6 +90,7 @@ void runAWSClient(void)
 	temperatureVal = 0.0;
 
     bool windowOpen = false;
+    GPIO_write(Board_LED0, Board_LED_OFF);
 
     jsonStruct_t windowActuator;
     windowActuator.cb = windowActuate_Callback;
@@ -135,7 +142,7 @@ void runAWSClient(void)
     rc = aws_iot_shadow_init(&mqttClient, &sp);
     if(SUCCESS != rc) {
         IOT_ERROR("Shadow Connection Error");
-        return rc;
+        return;
     }
 
     ShadowConnectParameters_t scp = ShadowConnectParametersDefault;
@@ -167,6 +174,8 @@ void runAWSClient(void)
     }
 
     initI2s();
+//    pwmledInit(3000);
+//    pwmled(1500);
 
     // loop and publish a change in temperature
     while(NETWORK_ATTEMPTING_RECONNECT == rc || NETWORK_RECONNECTED == rc || SUCCESS == rc) {
