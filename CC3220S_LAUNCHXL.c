@@ -236,12 +236,12 @@ GPIO_PinConfig gpioPinConfigs[] = {
     /*
      *  CC3220S_LAUNCHXL_GPIO_LED_D5 and CC3220S_LAUNCHXL_GPIO_LED_D6 are shared with the
      *  I2C and PWM peripherals. In order for those examples to work, these
-     *  LEDs are taken out of gpioPinCOnfig[]
+     *  LEDs are taken out of gpioPinConfig[]
      */
     /* CC3220S_LAUNCHXL_GPIO_LED_D6 */
-    //GPIOCC32XX_GPIO_10 | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW,
+    /* GPIOCC32XX_GPIO_10 | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW, */
     /* CC3220S_LAUNCHXL_GPIO_LED_D5 */
-    //GPIOCC32XX_GPIO_11 | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW,
+    /* GPIOCC32XX_GPIO_11 | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW, */
 };
 
 /*
@@ -426,14 +426,14 @@ const PowerCC32XX_ConfigV1 PowerCC32XX_config = {
     .resumeLPDSHookFxn = NULL,
     .enablePolicy = false,
     .enableGPIOWakeupLPDS = true,
-    .enableGPIOWakeupShutdown = false,
+    .enableGPIOWakeupShutdown = true,
     .enableNetworkWakeupLPDS = true,
     .wakeupGPIOSourceLPDS = PRCM_LPDS_GPIO13,
     .wakeupGPIOTypeLPDS = PRCM_LPDS_FALL_EDGE,
     .wakeupGPIOFxnLPDS = NULL,
     .wakeupGPIOFxnLPDSArg = 0,
-    .wakeupGPIOSourceShutdown = 0,
-    .wakeupGPIOTypeShutdown = 0,
+    .wakeupGPIOSourceShutdown = PRCM_HIB_GPIO13,
+    .wakeupGPIOTypeShutdown = PRCM_HIB_RISE_EDGE,
     .ramRetentionMaskLPDS = PRCM_SRAM_COL_1 | PRCM_SRAM_COL_2 |
         PRCM_SRAM_COL_3 | PRCM_SRAM_COL_4,
     .keepDebugActiveDuringLPDS = false,
@@ -480,7 +480,16 @@ const uint_least8_t PWM_count = CC3220S_LAUNCHXL_PWMCOUNT;
 #include <ti/drivers/SD.h>
 #include <ti/drivers/SDFatFS.h>
 
-/* Note: The SDFatFS and SD drivers must use the same count */
+/*
+ * Note: The SDFatFS driver provides interface functions to enable FatFs
+ * but relies on the SD driver to communicate with SD cards.  Opening a
+ * SDFatFs driver instance will internally try to open a SD driver instance
+ * reusing the same index number (opening SDFatFs driver at index 0 will try to
+ * open SD driver at index 0).  This requires that all SDFatFs driver instances
+ * have an accompanying SD driver instance defined with the same index.  It is
+ * acceptable to have more SD driver instances than SDFatFs driver instances
+ * but the opposite is not supported & the SDFatFs will fail to open.
+ */
 SDFatFS_Object sdfatfsObjects[CC3220S_LAUNCHXL_SDFatFSCOUNT];
 
 const SDFatFS_Config SDFatFS_config[CC3220S_LAUNCHXL_SDFatFSCOUNT] = {
@@ -522,36 +531,6 @@ const SD_Config SD_config[CC3220S_LAUNCHXL_SDCOUNT] = {
 };
 
 const uint_least8_t SD_count = CC3220S_LAUNCHXL_SDCOUNT;
-
-/*
- *  =============================== SDSPI ===============================
- */
-#include <ti/drivers/SDSPI.h>
-#include <ti/drivers/sdspi/SDSPICC32XX.h>
-
-SDSPICC32XX_Object sdspiCC3220SObjects[CC3220S_LAUNCHXL_SDSPICOUNT];
-
-/* SDSPI configuration structure, describing which pins are to be used */
-const SDSPICC32XX_HWAttrsV1 sdspiCC3220SHWattrs[CC3220S_LAUNCHXL_SDSPICOUNT] = {
-    {
-        .baseAddr = GSPI_BASE,
-        .spiPRCM = PRCM_GSPI,
-        .clkPin = SDSPICC32XX_PIN_05_CLK,
-        .mosiPin = SDSPICC32XX_PIN_07_MOSI,
-        .misoPin = SDSPICC32XX_PIN_06_MISO,
-        .csPin = SDSPICC32XX_PIN_62_GPIO
-    }
-};
-
-const SDSPI_Config SDSPI_config[CC3220S_LAUNCHXL_SDSPICOUNT] = {
-    {
-        .fxnTablePtr = &SDSPICC32XX_fxnTable,
-        .object = &sdspiCC3220SObjects[CC3220S_LAUNCHXL_SDSPI0],
-        .hwAttrs = &sdspiCC3220SHWattrs[CC3220S_LAUNCHXL_SDSPI0]
-    },
-};
-
-const uint_least8_t SDSPI_count = CC3220S_LAUNCHXL_SDSPICOUNT;
 
 /*
  *  =============================== SPI ===============================
@@ -697,7 +676,8 @@ const UARTCC32XXDMA_HWAttrsV1 uartCC3220SDmaHWAttrs[CC3220S_LAUNCHXL_UARTCOUNT] 
         .rxPin = UARTCC32XXDMA_PIN_57_UART0_RX,
         .txPin = UARTCC32XXDMA_PIN_55_UART0_TX,
         .ctsPin = UARTCC32XXDMA_PIN_UNASSIGNED,
-        .rtsPin = UARTCC32XXDMA_PIN_UNASSIGNED
+        .rtsPin = UARTCC32XXDMA_PIN_UNASSIGNED,
+        .errorFxn = NULL
     },
     {
         .baseAddr = UARTA1_BASE,
@@ -709,7 +689,8 @@ const UARTCC32XXDMA_HWAttrsV1 uartCC3220SDmaHWAttrs[CC3220S_LAUNCHXL_UARTCOUNT] 
         .rxPin = UARTCC32XXDMA_PIN_08_UART1_RX,
         .txPin = UARTCC32XXDMA_PIN_07_UART1_TX,
         .ctsPin = UARTCC32XXDMA_PIN_UNASSIGNED,
-        .rtsPin = UARTCC32XXDMA_PIN_UNASSIGNED
+        .rtsPin = UARTCC32XXDMA_PIN_UNASSIGNED,
+        .errorFxn = NULL
     }
 };
 
@@ -744,7 +725,8 @@ const UARTCC32XX_HWAttrsV1 uartCC3220SHWAttrs[CC3220S_LAUNCHXL_UARTCOUNT] = {
         .rxPin = UARTCC32XX_PIN_57_UART0_RX,
         .txPin = UARTCC32XX_PIN_55_UART0_TX,
         .ctsPin = UARTCC32XX_PIN_UNASSIGNED,
-        .rtsPin = UARTCC32XX_PIN_UNASSIGNED
+        .rtsPin = UARTCC32XX_PIN_UNASSIGNED,
+        .errorFxn = NULL
     },
     {
         .baseAddr = UARTA1_BASE,
@@ -756,7 +738,8 @@ const UARTCC32XX_HWAttrsV1 uartCC3220SHWAttrs[CC3220S_LAUNCHXL_UARTCOUNT] = {
         .rxPin = UARTCC32XX_PIN_08_UART1_RX,
         .txPin = UARTCC32XX_PIN_07_UART1_TX,
         .ctsPin = UARTCC32XX_PIN_UNASSIGNED,
-        .rtsPin = UARTCC32XX_PIN_UNASSIGNED
+        .rtsPin = UARTCC32XX_PIN_UNASSIGNED,
+        .errorFxn = NULL
     }
 };
 
@@ -789,7 +772,7 @@ const WatchdogCC32XX_HWAttrs watchdogCC3220SHWAttrs[CC3220S_LAUNCHXL_WATCHDOGCOU
         .baseAddr = WDT_BASE,
         .intNum = INT_WDT,
         .intPriority = (~0),
-        .reloadValue = 80000000 // 1 second period at default CPU clock freq
+        .reloadValue = 80000000 /* 1 second period at default CPU clock freq */
     }
 };
 

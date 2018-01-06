@@ -98,8 +98,8 @@ typedef enum CC3220S_LAUNCHXL_GPIOName {
      *  I2C and PWM peripherals. In order for those examples to work, these
      *  LEDs are  taken out of gpioPinCOnfig[]
      */
-    //CC3220S_LAUNCHXL_GPIO_LED_D6,
-    //CC3220S_LAUNCHXL_GPIO_LED_D5,
+    /* CC3220S_LAUNCHXL_GPIO_LED_D6, */
+    /* CC3220S_LAUNCHXL_GPIO_LED_D5, */
 
     CC3220S_LAUNCHXL_GPIOCOUNT
 } CC3220S_LAUNCHXL_GPIOName;
@@ -154,15 +154,6 @@ typedef enum CC3220S_LAUNCHXL_SDName {
 
     CC3220S_LAUNCHXL_SDCOUNT
 } CC3220S_LAUNCHXL_SDName;
-/*!
- *  @def    CC3220S_LAUNCHXL_SDSPIName
- *  @brief  Enum of SDSPI names on the CC3220S_LAUNCHXL dev board
- */
-typedef enum CC3220S_LAUNCHXL_SDSPIName {
-    CC3220S_LAUNCHXL_SDSPI0 = 0,
-
-    CC3220S_LAUNCHXL_SDSPICOUNT
-} CC3220S_LAUNCHXL_SDSPIName;
 
 /*!
  *  @def    CC3220S_LAUNCHXL_SPIName

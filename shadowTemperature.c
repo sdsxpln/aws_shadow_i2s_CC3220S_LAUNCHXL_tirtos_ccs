@@ -174,8 +174,6 @@ void runAWSClient(void)
     }
 
     initI2s();
-//    pwmledInit(3000);
-//    pwmled(1500);
 
     // loop and publish a change in temperature
     while(NETWORK_ATTEMPTING_RECONNECT == rc || NETWORK_RECONNECTED == rc || SUCCESS == rc) {

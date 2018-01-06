@@ -42,7 +42,6 @@ extern "C" {
 #include <ti/drivers/I2C.h>
 #include <ti/drivers/I2S.h>
 #include <ti/drivers/PWM.h>
-#include <ti/drivers/SDSPI.h>
 #include <ti/drivers/SD.h>
 #include <ti/drivers/SDFatFS.h>
 #include <ti/drivers/SPI.h>
@@ -85,8 +84,6 @@ extern "C" {
 #define Board_PWM0                   CC3220S_LAUNCHXL_PWM6
 #define Board_PWM1                   CC3220S_LAUNCHXL_PWM7
 
-#define Board_SDSPI0                 CC3220S_LAUNCHXL_SDSPI0
-
 #define Board_SD0                    CC3220S_LAUNCHXL_SD0
 
 #define Board_SDFatFS0               CC3220S_LAUNCHXL_SD0
@@ -117,7 +114,6 @@ extern "C" {
 #define Board_initI2C                I2C_init
 #define Board_initI2S                I2S_init
 #define Board_initPWM                PWM_init
-#define Board_initSDSPI              SDSPI_init
 #define Board_initSD                 SD_init
 #define Board_initSDFatFS            SDFatFS_init
 #define Board_initSPI                SPI_init
