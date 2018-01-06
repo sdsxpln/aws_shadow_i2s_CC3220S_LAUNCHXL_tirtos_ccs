@@ -203,7 +203,7 @@ void runAWSClient(void)
                 rc = aws_iot_finalize_json_document(JsonDocumentBuffer, sizeOfJsonDocumentBuffer);
                 if(SUCCESS == rc) {
                     IOT_INFO("Update Shadow: %s", JsonDocumentBuffer);
-                    rc = aws_iot_shadow_update(&mqttClient, AWS_IOT_MY_THING_NAME, JsonDocumentBuffer,
+                    rc = aws_iot_shadow_update( &mqttClient, AWS_IOT_MY_THING_NAME, JsonDocumentBuffer,
                                                ShadowUpdateStatusCallback, NULL, 4, true);
                 }
             }

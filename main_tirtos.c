@@ -134,15 +134,13 @@ void *awsThreadFxn(void *arg0)
 /*
  *  ======== main ========
  */
-/*
- *  ======== main ========
- */
 int main(void)
 {
 // start original
     pthread_attr_t pthreadAttrs;
     pthread_t slThread;
     pthread_t awsThread;
+    struct sched_param  priParam;
     int status;
 
     Board_initGeneral();
@@ -157,8 +155,19 @@ int main(void)
         while (1);
     }
 
+
+    // GPIO_write(Board_LED0, Board_LED_ON);
+
     /* Create the sl_Task thread */
     pthread_attr_init(&pthreadAttrs);
+
+    status = pthread_attr_setdetachstate(&pthreadAttrs, PTHREAD_CREATE_DETACHED);
+    if (status != 0) {
+        while (1);
+    }
+
+    priParam.sched_priority = 1;
+    pthread_attr_setschedparam(&pthreadAttrs, &priParam);
 
     status = pthread_attr_setstacksize(&pthreadAttrs, 2048);
     if (status != 0) {
@@ -172,6 +181,8 @@ int main(void)
         while (1);
     }
 
+    priParam.sched_priority = 2;
+    pthread_attr_setschedparam(&pthreadAttrs, &priParam);
     /* Create the AWS thread */
     status = pthread_attr_setstacksize(&pthreadAttrs, 3328);
     if (status != 0) {
