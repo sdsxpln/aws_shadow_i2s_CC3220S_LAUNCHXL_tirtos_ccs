@@ -1,5 +1,11 @@
 AWS Shadow I2S
 
+** Modified TI AWS-IoT shadow_sample to read the CC3220S-LAUNCHPADXL onboard temperature and accelerometer sensors from the I2S bus **
+
+** Modified to toggle BOARD_LED0 when the state of the `windowOpen` parameter is changed **
+
+** Updated [aws-iot-device-sdk-embedded-C](https://github.com/aws/aws-iot-device-sdk-embedded-C) to version 2.2.0 + **
+
 Prerequisites For Running The Example
 
 Before building the example application, it is necessary to set up and configure your AWS IoT account, properly connect the CC3220 launchpad, as well as configure necessary certificates and device information in the example source files. The top level documentation provides links to Amazon’s instructions, as well as steps for properly configuring your device. Please ensure that you have followed the steps in the top level documentation before building and running the example.
