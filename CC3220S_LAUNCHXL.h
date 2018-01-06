@@ -211,3 +211,4 @@ extern void CC3220S_LAUNCHXL_initGeneral(void);
 #endif
 
 #endif /* __CC3220S_LAUNCHXL_H */
+
