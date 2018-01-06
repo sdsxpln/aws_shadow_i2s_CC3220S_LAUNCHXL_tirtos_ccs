@@ -785,4 +785,3 @@ const Watchdog_Config Watchdog_config[CC3220S_LAUNCHXL_WATCHDOGCOUNT] = {
 };
 
 const uint_least8_t Watchdog_count = CC3220S_LAUNCHXL_WATCHDOGCOUNT;
-
