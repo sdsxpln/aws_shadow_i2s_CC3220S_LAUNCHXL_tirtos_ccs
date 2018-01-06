@@ -43,6 +43,7 @@
 #include <ti/drivers/GPIO.h>
 #include <ti/drivers/Power.h>
 #include <ti/drivers/net/wifi/simplelink.h>
+#include <ti/drivers/PWM.h>
 #include <ti/net/tls.h>
 
 /* Example/Board Header files */
@@ -144,9 +145,15 @@ int main(void)
     int status;
 
     Board_initGeneral();
+
     GPIO_init();
+    PWM_init();
     SPI_init();
     Display_init();
+
+    GPIO_write(Board_LED0, Board_LED_OFF);
+    GPIO_write(Board_LED1, Board_LED_OFF);
+    GPIO_write(Board_LED2, Board_LED_OFF);
 
     /* Open the display for output */
     AWSIOT_display = Display_open(Display_Type_UART, NULL);
@@ -181,8 +188,6 @@ int main(void)
         while (1);
     }
 
-    priParam.sched_priority = 2;
-    pthread_attr_setschedparam(&pthreadAttrs, &priParam);
     /* Create the AWS thread */
     status = pthread_attr_setstacksize(&pthreadAttrs, 3328);
     if (status != 0) {

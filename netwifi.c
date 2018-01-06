@@ -283,10 +283,11 @@ void NetWiFi_init()
     uint16_t           dhcpIsOn;
 
     /* Turn LED OFF. It will be used as a connection indicator */
+/*
     GPIO_write(Board_LED0, Board_LED_OFF);
     GPIO_write(Board_LED1, Board_LED_OFF);
     GPIO_write(Board_LED2, Board_LED_OFF);
-
+*/
     setStationMode();
 
     /* Host driver starts the network processor */
@@ -329,7 +330,7 @@ void NetWiFi_init()
     /* Use NTP to get the current time, as needed for SSL authentication */
     startNTP();
 
-    GPIO_write(Board_LED0, Board_LED_ON);
+//    GPIO_write(Board_LED0, Board_LED_ON);
 }
 
 /*

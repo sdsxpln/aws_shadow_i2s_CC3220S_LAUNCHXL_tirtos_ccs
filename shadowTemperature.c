@@ -183,7 +183,6 @@ void runAWSClient(void)
             // If the client is attempting to reconnect we will skip the rest of the loop.
             continue;
         }
-        IOT_INFO("\n=======================================================================================\n");
         IOT_INFO("On Device: window state %s", windowOpen ? "true" : "false");
 
         temperatureReading();
@@ -208,7 +207,6 @@ void runAWSClient(void)
                 }
             }
         }
-        IOT_INFO("*****************************************************************************************\n");
         sleep(1);
     }
 
