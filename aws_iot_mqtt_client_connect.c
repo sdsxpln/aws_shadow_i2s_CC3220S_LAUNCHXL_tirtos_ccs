@@ -404,11 +404,14 @@ static IoT_Error_t _aws_iot_mqtt_internal_connect(AWS_IoT_Client *pClient, IoT_C
 		}
 	}
 
-	rc = pClient->networkStack.connect(&(pClient->networkStack), NULL);
-	if(SUCCESS != rc) {
-		/* TLS Connect failed, return error */
-		FUNC_EXIT_RC(rc);
-	}
+    rc = pClient->networkStack.connect(&(pClient->networkStack), NULL);
+    if(SUCCESS != rc) {
+        rc = pClient->networkStack.connect(&(pClient->networkStack), NULL);
+        if(SUCCESS != rc) {
+            /* TLS Connect failed, return error */
+            FUNC_EXIT_RC(rc);
+        }
+    }
 
 	init_timer(&connect_timer);
 	countdown_ms(&connect_timer, pClient->clientData.commandTimeoutMs);
